@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /e/
+Disallow: /api/
+Sitemap: https://pb-whos-bringing-what.pages.dev/sitemap.xml

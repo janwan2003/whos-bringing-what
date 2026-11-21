@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who's Bringing What · Free potluck sign-up sheet, no sign-up</title>
+<meta name="description" content="Make a potluck sign-up list in 20 seconds and drop the link in your group chat. Guests tap a dish to claim it. No accounts, no app, no ads. Dietary needs and duplicates at a glance.">
+<link rel="canonical" href="https://pb-whos-bringing-what.pages.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Who's Bringing What">
+<meta property="og:title" content="Who's Bringing What · Potluck sign-up in one link">
+<meta property="og:description" content="Make the list, drop the link in the group chat, everyone claims a dish. No sign-up, no app, no ads.">
+<meta property="og:url" content="https://pb-whos-bringing-what.pages.dev/">
+<meta property="og:image" content="https://pb-whos-bringing-what.pages.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="google-site-verification" content="g6R95T8-VFARk0PYhc-lkqete3o5OcxzkrFJ0B-vI4E" />
+<meta name="theme-color" content="#c2410c">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/app.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Who's Bringing What","url":"https://pb-whos-bringing-what.pages.dev/","applicationCategory":"LifestyleApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free potluck sign-up sheet. Share one link; guests claim dishes with just a name."}</script>
+</head>
+<body>
+<div class="wrap wide">
+  <header class="top">
+    <a class="brand" href="/"><img src="/icon.svg" alt="" width="30" height="30">Who's Bringing What</a>
+    <a class="link" href="#how">How it works</a>
+  </header>
+
+  <section class="hero">
+    <h1>Who's bringing what?<br>Sorted in one link.</h1>
+    <p class="lead">A potluck sign-up list for your group chat. Make the list, share the link, and everyone taps the dish they'll bring. No accounts, no app, no ads.</p>
+  </section>
+
+  <div class="home-grid">
+    <form id="create" class="card" novalidate>
+      <h2>Start a list</h2>
+      <p class="muted small">Pick an occasion. You can change everything later.</p>
+      <div class="kinds" id="kinds" role="group" aria-label="Occasion"></div>
+
+      <label for="name">Event name</label>
+      <input id="name" type="text" maxlength="80" placeholder="Friendsgiving at Sam's" autocomplete="off" required>
+      <div class="two">
+        <div><label for="date">Date <span class="muted small">(optional)</span></label><input id="date" type="date"></div>
+        <div><label for="time">Time <span class="muted small">(optional)</span></label><input id="time" type="time"></div>
+      </div>
+      <label for="place">Place <span class="muted small">(optional)</span></label>
+      <input id="place" type="text" maxlength="120" placeholder="Sam's place, 4th floor" autocomplete="off">
+
+      <label>What do you need?</label>
+      <p class="hint">How many of each. Guests can also add their own extras.</p>
+      <div id="cats"></div>
+      <button type="button" class="ghost" id="addcat">+ Add a category</button>
+
+      <label for="host">Your name</label>
+      <input id="host" type="text" maxlength="40" placeholder="Sam" autocomplete="given-name" required>
+      <p class="hint">Shown to guests as the host. No email, no password.</p>
+
+      <div class="err" id="err" role="alert"></div>
+      <button class="primary block" id="go" type="submit">Create the list</button>
+    </form>
+
+    <div class="sticky">
+      <section class="card flat" id="how">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li><b class="n">1</b><div><b>Make the list.</b> Mains, sides, desserts, drinks. Say how many of each you need.</div></li>
+          <li><b class="n">2</b><div><b>Drop the link in the group chat.</b> The preview shows what's still needed: "9 of 14 covered · still needed: 2 sides".</div></li>
+          <li><b class="n">3</b><div><b>Everyone taps a dish.</b> Just a name, no sign-up. Duplicates get flagged ("Ana is already bringing mashed potatoes").</div></li>
+          <li><b class="n">4</b><div><b>See dietary needs at a glance.</b> Who's vegetarian, who has a nut allergy, and which dishes fit.</div></li>
+        </ol>
+      </section>
+      <section class="card flat faq">
+        <h2>Questions</h2>
+        <details><summary>Do my guests need an account or the app?</summary><p>No. They open the link, type their first name and tap what they'll bring. It works in any phone browser, including the one inside WhatsApp, iMessage and Messenger.</p></details>
+        <details><summary>Is it really free? Are there ads?</summary><p>Free, and no ads. We don't ask for emails or phone numbers.</p></details>
+        <details><summary>Can two people claim the same thing?</summary><p>No. Once a dish is taken it's gone, and if someone adds an extra that looks like a dish already on the list, they see a heads-up first.</p></details>
+        <details><summary>How do I manage the list from another phone?</summary><p>Everyone, host included, gets a personal link on the list page. Open it on another device and you're you again.</p></details>
+        <details><summary>What happens to the list afterwards?</summary><p>The host can delete it any time. Lists are deleted automatically 180 days after they were made. <a href="/privacy">Privacy</a>.</p></details>
+      </section>
+    </div>
+  </div>
+
+  <section class="card flat" id="recent-box" hidden>
+    <h2>Your lists on this device</h2>
+    <ul class="people" id="recent"></ul>
+  </section>
+
+  <footer class="site">
+    <p><b>Who's Bringing What</b> · free potluck sign-up sheets for Friendsgiving, Thanksgiving, Christmas dinners, BBQs and parties.</p>
+    <p><a href="/privacy">Privacy</a> · <a href="https://github.com/janwan2003/whos-bringing-what/issues">Support</a></p>
+  </footer>
+</div>
+<script type="module" src="/home.js"></script>
+</body>
+</html>
