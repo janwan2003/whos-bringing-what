@@ -58,6 +58,11 @@ async function claim(p, catName, { name, diet = [], dish, tags = [] }) {
   if (tags.length) await chips(p, tags);
 }
 const submit = (p) => sheet(p).locator('button[type=submit]').click();
+// Nothing may stick out sideways on a small phone (iPhone SE is 320 px wide).
+async function noSideScroll(p, what) {
+  const r = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: window.innerWidth }));
+  assert.ok(r.sw <= r.w, `${what}: page is ${r.sw}px wide in a ${r.w}px viewport`);
+}
 
 let eventId;
 try {
@@ -79,9 +84,9 @@ try {
   await host.page.getByRole('button', { name: 'Fewer Sides' }).click(); // 5 -> 4 sides
   step('create');
   await host.page.locator('#create button[type=submit]').click();
-  await host.page.waitForURL(/\/e\/[A-Za-z0-9]+\?new=1/);
-  eventId = new URL(host.page.url()).pathname.split('/')[2];
   await host.page.locator('#new-banner').waitFor();
+  eventId = new URL(host.page.url()).pathname.split('/')[2];
+  assert.ok(!host.page.url().includes('new=1'), '?new=1 is stripped from the address bar');
   assert.equal(await host.page.locator('#covered').textContent(), '0 of 11 covered');
   assert.equal(await cat(host.page, 'Sides').locator('.item').count(), 4);
   await claim(host.page, 'Mains', { dish: 'Roast turkey' });
@@ -89,6 +94,10 @@ try {
   await host.page.locator('.item.mine', { hasText: 'Roast turkey' }).waitFor();
   assert.equal(await host.page.locator('#covered').textContent(), '1 of 11 covered');
   const link = `${BASE}/e/${eventId}`;
+
+  step('share without the Web Share API copies the link');
+  await host.page.getByRole('button', { name: 'Share the list' }).click();
+  await host.page.locator('.toast', { hasText: 'Link copied' }).waitFor();
 
   step('link preview (Open Graph) shows live state');
   const og = async () => (await (await fetch(link)).text()).match(/property="og:description" content="([^"]*)"/)[1];
@@ -179,12 +188,22 @@ try {
   assert.match(dietText, /Nut allergy \(Ben\): “Pecan pie” contains nuts/);
   assert.match(dietText, /Contains nuts1 of 7/);
   await shot(ana.page, 'event-phone-guest.png');
+  await noSideScroll(ana.page, 'guest list page at 390 px');
+  await ana.page.setViewportSize({ width: 320, height: 640 });
+  await noSideScroll(ana.page, 'guest list page at 320 px');
+  await shot(ana.page, 'event-phone-320.png');
+  await ana.page.setViewportSize(PHONE.viewport);
 
   step('Ana edits, drops and re-claims');
   await ana.page.locator('.item.mine', { hasText: 'Mashed potatoes' }).getByRole('button', { name: 'Edit' }).click();
   await sheet(ana.page).getByLabel('What are you bringing?').fill('Garlic mashed potatoes');
   await submit(ana.page);
   await ana.page.locator('.item.mine', { hasText: 'Garlic mashed potatoes' }).waitFor();
+  await ana.page.locator('.item.mine', { hasText: 'Garlic mashed potatoes' }).getByRole('button', { name: /Drop/ }).click();
+  await sheet(ana.page).waitFor();
+  await ana.page.keyboard.press('Escape'); // Escape closes the confirm without dropping
+  await sheet(ana.page).waitFor({ state: 'detached' });
+  assert.equal(await ana.page.locator('.item.mine', { hasText: 'Garlic mashed potatoes' }).count(), 1, 'Escape does not drop');
   await ana.page.locator('.item.mine', { hasText: 'Garlic mashed potatoes' }).getByRole('button', { name: /Drop/ }).click();
   await sheet(ana.page).getByRole('button', { name: 'Drop it' }).click();
   await ana.page.locator('.toast', { hasText: 'open again' }).waitFor();
@@ -223,6 +242,8 @@ try {
   await shot(host.page, 'event-desktop-host.png');
   await host.page.setViewportSize({ width: 390, height: 844 });
   await shot(host.page, 'event-phone-host.png');
+  await host.page.setViewportSize({ width: 320, height: 640 });
+  await noSideScroll(host.page, 'host list page at 320 px');
   await host.page.setViewportSize(DESKTOP.viewport);
   const covered = await host.page.locator('#covered').textContent();
   assert.equal(covered, '5 of 11 covered'); // main, side, drinks, dessert, ice (Eve's dessert was freed; Cy's beans are an extra)
@@ -241,6 +262,8 @@ try {
   await home.goto(BASE + '/');
   await home.locator('#recent a', { hasText: "Friendsgiving at Sam's" }).waitFor();
   await shot(home, 'home-phone.png');
+  await home.setViewportSize({ width: 320, height: 640 });
+  await noSideScroll(home, 'home at 320 px');
   await home.close();
 
   step('host deletes the list');
@@ -252,6 +275,11 @@ try {
   await cy.page.reload();
   await cy.page.getByRole('heading', { name: 'This list is gone' }).waitFor();
   assert.equal((await fetch(`${BASE}/api/events/${new URL(link).pathname.split('/')[2]}`)).status, 404);
+
+  step('unknown page is a real 404 with a way back');
+  const nf = await fetch(`${BASE}/no-such-page`);
+  assert.equal(nf.status, 404);
+  assert.match(await nf.text(), /This page doesn't exist/);
 
   assert.deepEqual(errors, [], 'no console errors');
   console.log('\nPASS: all e2e steps');

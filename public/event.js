@@ -4,6 +4,7 @@ const id = location.pathname.split('/')[2] || '';
 const app = document.getElementById('app');
 const sheetRoot = document.getElementById('sheet-root');
 const isNew = new URLSearchParams(location.search).has('new');
+if (isNew) history.replaceState(null, '', location.pathname + location.hash);
 
 // A personal link carries the member token in the hash (#k=...). Save it, then strip it from the URL.
 const hk = new URLSearchParams(location.hash.slice(1)).get('k');
@@ -33,6 +34,7 @@ const slots = () => data.items.filter((i) => i.isSlot);
 const tagLabel = (t) => (TAGS.find((x) => x[0] === t) || [t, t])[1];
 const tagShort = (t) => (TAGS.find((x) => x[0] === t) || [t, t, t])[2];
 const dietLabel = (d) => (DIETS.find((x) => x[0] === d) || [d, d])[1];
+const ico = (name) => h('span', { class: `ico ${name}`, 'aria-hidden': 'true' });
 
 async function load() {
   try {
@@ -117,10 +119,20 @@ function menuText() {
 }
 
 // ---------- sheets ----------
+let sheetOpener = null;
+let sheetOnClose = null;
 function closeSheet() {
+  if (!sheetRoot.childElementCount) return;
   sheetRoot.replaceChildren();
   document.body.style.overflow = '';
+  const cb = sheetOnClose;
+  sheetOnClose = null;
+  if (cb) cb();
+  // Give focus back to the button that opened the sheet (if it survived a re-render).
+  if (sheetOpener && sheetOpener.isConnected) sheetOpener.focus({ preventScroll: true });
+  sheetOpener = null;
 }
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheetRoot.childElementCount) closeSheet(); });
 function openSheet(title, sub, content, onSubmit, submitLabel = 'Save', opts = {}) {
   const err = h('div', { class: 'err', role: 'alert' });
   const submit = h('button', { class: opts.danger ? 'primary' : 'primary', type: 'submit', style: opts.danger ? 'background:var(--danger);border-color:var(--danger)' : null }, submitLabel);
@@ -141,7 +153,8 @@ function openSheet(title, sub, content, onSubmit, submitLabel = 'Save', opts = {
     }
   });
   const back = h('div', { class: 'sheet-back', onclick: (e) => e.target === back && closeSheet() }, form);
-  back.addEventListener('keydown', (e) => e.key === 'Escape' && closeSheet());
+  sheetOpener = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+  sheetOnClose = opts.onClose || null;
   sheetRoot.replaceChildren(back);
   document.body.style.overflow = 'hidden';
   const first = form.querySelector('input:not([type=hidden]), textarea');
@@ -150,8 +163,9 @@ function openSheet(title, sub, content, onSubmit, submitLabel = 'Save', opts = {
 }
 function confirmSheet(title, text, okLabel) {
   return new Promise((resolve) => {
-    openSheet(title, null, h('p', {}, text), async () => { closeSheet(); resolve(true); }, okLabel, { danger: true, noFocus: true });
-    sheetRoot.querySelector('button[type=button]').addEventListener('click', () => resolve(false));
+    let ok = false;
+    openSheet(title, null, h('p', {}, text), async () => { ok = true; closeSheet(); }, okLabel,
+      { danger: true, noFocus: true, onClose: () => resolve(ok) });
   });
 }
 function chipGroup(options, selected, label) {
@@ -316,7 +330,7 @@ function menuSheet() {
         its.map((i) => h('li', {}, i.dish, ' ', h('small', {}, `· ${memberName(i.claimedBy)}${i.tags.length ? ' · ' + i.tags.map(tagShort).join(' ') : ''}`))),
         open ? h('li', {}, h('small', {}, `${open} still needed`)) : null)];
     }),
-    h('div', { class: 'foot' }, 'Made with Who’s Bringing What'));
+    h('div', { class: 'foot' }, `Made with Who’s Bringing What · ${location.host}`));
   const form = openSheet('Menu card', 'Screenshot it, or copy it as text for the group chat.', card, async () => {
     if (await copyText(menuText())) toast('Menu copied. Paste it anywhere.');
   }, 'Copy as text', { noFocus: true });
@@ -397,7 +411,7 @@ function peopleCard() {
       const n = data.items.filter((i) => i.claimedBy === m.id).length;
       return h('li', {},
         h('span', {}, h('b', {}, m.name), m.isHost ? h('span', { class: 'tag host' }, 'Host') : null, m.id === data.me ? h('span', { class: 'muted small' }, ' (you)') : null,
-          m.diet.map((d) => h('span', { class: 'tag', title: dietLabel(d) }, dietLabel(d)))),
+          m.diet.map((d) => h('span', { class: 'tag diet', title: dietLabel(d) }, dietLabel(d)))),
         h('span', { class: 'row' }, h('span', { class: 'muted small' }, n ? `${n} ${n === 1 ? 'item' : 'items'}` : 'nothing yet'),
           editMode && !m.isHost ? h('button', { class: 'ghost danger', 'aria-label': `Remove ${m.name}`,
             onclick: async () => { if (await confirmSheet(`Remove ${m.name}?`, 'Their dishes go back on the list.', 'Remove')) act(() => api('DELETE', `events/${id}/members/${m.id}`, undefined, token)); } }, 'Remove') : null));
@@ -450,10 +464,10 @@ function render() {
   const host = data.members.find((m) => m.isHost);
   const need = stillNeeded();
   const meta = [
-    ev.date ? h('span', {}, '📅 ', fmtDate(ev.date, true)) : null,
-    ev.time ? h('span', {}, '🕖 ', fmtTime(ev.time)) : null,
-    ev.place ? h('span', {}, '📍 ', ev.place) : null,
-    host ? h('span', {}, '🏠 Hosted by ', host.name) : null,
+    ev.date ? h('span', {}, ico('cal'), fmtDate(ev.date, true)) : null,
+    ev.time ? h('span', {}, ico('clock'), fmtTime(ev.time)) : null,
+    ev.place ? h('span', {}, ico('pin'), ev.place) : null,
+    host ? h('span', {}, ico('host'), 'Hosted by ', host.name) : null,
   ];
   const scrollY = window.scrollY;
   const parts = [
@@ -467,7 +481,7 @@ function render() {
         h('div', { class: 'spread small' }, h('b', { id: 'covered' }, covered === sl.length ? `All ${sl.length} covered 🎉` : `${covered} of ${sl.length} covered`),
           h('span', { class: 'muted' }, `${data.members.length} ${data.members.length === 1 ? 'person' : 'people'} in`)),
         need.length ? h('p', { class: 'muted small' }, `Still needed: ${need.join(', ')}`) : null] : null,
-      h('div', { class: 'share-row' }, h('button', { class: 'primary', id: 'share', onclick: share }, '📤 Share the list'), h('button', { id: 'menu', onclick: menuSheet }, 'Menu card'))),
+      h('div', { class: 'share-row' }, h('button', { class: 'primary', id: 'share', onclick: share }, ico('share'), 'Share the list'), h('button', { id: 'menu', onclick: menuSheet }, 'Menu card'))),
     !data.me ? h('p', { class: 'muted small', style: 'margin:0 4px 12px' }, 'Tap “I’ll bring it” on anything open. You only need your first name.') : null,
     editMode ? h('div', { class: 'okline', style: 'margin-bottom:14px' }, 'Editing: rename or remove items and categories, free up claimed dishes, remove people. Tap “Done editing” when finished.') : null,
     data.categories.map(categoryCard),
@@ -476,7 +490,7 @@ function render() {
     meCard(),
     peopleCard(),
     hostCard(),
-    h('section', { class: 'card start-own' }, h('h2', {}, 'Hosting something too?'),
+    data.isHost ? null : h('section', { class: 'card start-own' }, h('h2', {}, 'Hosting something too?'),
       h('p', { class: 'muted' }, 'Make your own who’s-bringing-what list in 20 seconds. Free, no sign-up.'),
       h('a', { class: 'btn primary', href: '/?ref=list' }, 'Start your own list')),
   ];

@@ -96,6 +96,8 @@ async function limit(env, request, bucket, max, windowMs = 3600000) {
   )
     .bind(k, now + windowMs, now)
     .first();
+  // Expired windows are dead rows (the privacy page promises the counters last about an hour); sweep them now and then.
+  if (Math.random() < 0.05) await env.DB.prepare('DELETE FROM rate WHERE reset_at < ?1').bind(now).run();
   if (row && row.n > max) throw new HttpError(429, 'Too many requests from your connection. Please wait a bit and try again.');
 }
 

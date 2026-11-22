@@ -90,7 +90,7 @@ function renderRecent() {
   const list = store.recent().filter((x) => store.get(x.id));
   if (!list.length) return;
   $('recent-box').hidden = false;
-  $('recent').replaceChildren(...list.map((x) => h('li', {}, h('a', { href: `/e/${x.id}` }, x.name || 'Untitled list'))));
+  $('recent').replaceChildren(...list.map((x) => h('li', {}, h('a', { href: `/e/${x.id}` }, x.name || 'Untitled list'), h('span', { class: 'muted small' }, 'Open →'))));
 }
 
 setKind(kind);
