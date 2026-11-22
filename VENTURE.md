@@ -114,7 +114,7 @@ partner (affiliate, after registration). Never paywall claiming, list size or di
 
 ## Metrics
 - 2026-11-21: launched today; 0 real lists (prod D1 `events` count 0 after the e2e test deleted its own list). Search Console: no data yet.
-- 2026-11-22 ~14:40 UTC: 0 events, 0 members, 0 items, 0 categories (prod D1 via `wrangler d1 execute --remote`, read-only COUNT, after the
+- 2026-11-22 ~14:15 UTC: 0 events, 0 members, 0 items, 0 categories (prod D1 via `wrangler d1 execute --remote`, read-only COUNT, after the
   prod e2e deleted its own list). Search Console 0 impressions 11-01→11-22 (per this morning's review).
 
 ## Log
