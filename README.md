@@ -20,7 +20,7 @@ npx -y pnpm@9 install
 npx wrangler d1 execute pb-whos-bringing-what --local --file=schema.sql
 npx wrangler pages dev --port 8788 --ip 127.0.0.1
 npm run test:unit
-BASE=http://127.0.0.1:8788 node tests/e2e/run.mjs     # real Chromium, 7 browser contexts, screenshots in shots/
+BASE=http://127.0.0.1:8788 node tests/e2e/run.mjs     # real Chromium, 7 browser contexts, 390/320 px overflow checks, screenshots in shots/
 node tools/render-images.mjs                           # og.png + icons
 ```
 

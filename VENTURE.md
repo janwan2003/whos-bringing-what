@@ -4,7 +4,7 @@ stage: launched
 priority: 5
 url: https://pb-whos-bringing-what.pages.dev
 repo: https://github.com/janwan2003/whos-bringing-what
-updated: 2026-11-21
+updated: 2026-11-22
 ---
 
 ## Thesis
@@ -49,7 +49,7 @@ Checked 2026-11-21 by a research subagent (about 20 web searches, about 14 page 
   Search is crowded (SignUpGenius, SignUp.com, Jotform blogs), so growth must come from links shared in group chats.
 
 ## Status
-**Live: https://pb-whos-bringing-what.pages.dev** (deploy db8eb27b). Product/support/privacy page on GitHub Pages:
+**Live: https://pb-whos-bringing-what.pages.dev** (deploy 062b5207, 2026-11-22). Product/support/privacy page on GitHub Pages:
 https://janwan2003.github.io/whos-bringing-what/ . Search Console: site verified (META) and sitemap submitted 2026-11-21.
 
 What exists (Cloudflare Pages + Functions + D1 `pb-whos-bringing-what`, free plan, vanilla JS, no build step):
@@ -77,17 +77,35 @@ Verified 2026-11-21:
 - Rate limit checked locally: creates returned 201 until 20 in the hour, then 429.
 - Live URL checks: `/`, `/privacy`, robots, sitemap, og.png, icons, manifest all 200; CSP and X-Frame-Options headers present.
 
+Verified 2026-11-22 (quality session, deploy 062b5207):
+- `npm run test:unit` 4/4 pass. `tests/e2e/run.mjs` (real Chromium, 7 contexts) **passes locally and on production**, now also checking:
+  no sideways scroll at 390 px and 320 px (iPhone SE) on home, guest page and host page; share without the Web Share API copies the link;
+  Escape closes a confirm sheet without acting; `?new=1` is stripped from the address bar; unknown paths return a real 404 page.
+- Bug found and fixed: at 320 px the home form was 365 px wide (date/time inputs' minimum width), so the page scrolled sideways.
+- Polish: emoji in the event header and share button replaced by line icons (CSS masks); own-dish row on phones keeps tags inline with
+  Edit/Drop below (the tag used to wrap alone); neutral colour for diet tags; "Your lists on this device" moved above the form;
+  "Start your own list" card hidden from the host; menu card footer carries the site address (the screenshot is the shareable artifact);
+  sheets return focus to their button, Escape works from anywhere, confirm promises always settle.
+- Reliability: rate-limit rows were never deleted (the privacy page says counters last about an hour); expired rows are now swept on ~5% of
+  limited requests. Checked locally: an expired row inserted by hand was gone after 80 requests; create limit still 429s after 20/h.
+- Screenshots checked by eye: home 1280/390/320 px, guest page 390/320 px, claim sheet 390 px, host page 390 px, menu card 1280 px.
+- Live: `/`, `/privacy`, robots, sitemap, og.png, icons, manifest, app.css 200; `/no-such-page` 404. Prod D1 after the prod e2e: 0 events,
+  0 members, 0 items (the test deletes its own list).
+- Tried WebKit (Safari engine) in Playwright: the browser downloads but the host lacks system libraries (needs `sudo apt-get install`,
+  outside a builder's lane), so it was removed again. Safari is still untested.
+
 Not covered yet: real iOS Safari / Android Chrome and WhatsApp/iMessage in-app browsers and preview rendering; per-list OG image;
 languages other than English; load beyond a handful of users; accessibility audit beyond labels/roles.
 
 ## Next steps
-1. **Seed distribution before Thanksgiving (26 Nov) and Christmas:** write `store/launch-posts.md` with honest posts
-   (Product Hunt, AlternativeTo as an alternative to SignUpGenius/PerfectPotluck/Whocan, relevant subreddits' rules permitting);
-   posting needs the operator's accounts, so ask in the inbox. Never spam.
+1. **Seed distribution before Thanksgiving (26 Nov) and Christmas:** `store/launch-posts.md` holds ready-to-paste honest posts
+   (written 2026-11-22); posting needs the operator's accounts (inbox request). Never spam.
 2. Per-list OG image (PNG from the Function, e.g. "5 of 11 covered · still needed: 3 sides") so the chat preview visibly counts up.
 3. SEO landing pages for the searches that exist: `/friendsgiving-sign-up-sheet`, `/christmas-potluck-sign-up`, `/bbq-sign-up-sheet`
    (each opening the right template), add to sitemap.
-4. Quality on real devices (in-app browsers), add-to-calendar (.ics) on the list page, print view of the menu card.
+4. Quality on real devices: iOS Safari and in-app browsers (Messenger/Instagram/Telegram keep their own storage, so a guest who opens the
+   link there and later in Safari is a stranger and their name is "already on this list"; consider a gentler recovery path).
+   Then add-to-calendar (.ics) on the list page and a print view of the menu card.
 5. Weekly `## Metrics` from D1: `SELECT COUNT(*) FROM events WHERE created_at > ?` (creators) and non-host members (joiners).
 
 ## Monetization plan
@@ -96,6 +114,8 @@ partner (affiliate, after registration). Never paywall claiming, list size or di
 
 ## Metrics
 - 2026-11-21: launched today; 0 real lists (prod D1 `events` count 0 after the e2e test deleted its own list). Search Console: no data yet.
+- 2026-11-22 ~14:40 UTC: 0 events, 0 members, 0 items, 0 categories (prod D1 via `wrangler d1 execute --remote`, read-only COUNT, after the
+  prod e2e deleted its own list). Search Console 0 impressions 11-01→11-22 (per this morning's review).
 
 ## Log
 - 2026-11-20 (operator session): seeded as a priority-5 idea.
@@ -103,3 +123,10 @@ partner (affiliate, after registration). Never paywall claiming, list size or di
   "potluck sign up sheet" from a Semrush snippet). Designed, built and deployed the app on Cloudflare (Pages + Functions + D1, all `pb-`),
   repo + GitHub Pages product/privacy page, Search Console verified + sitemap submitted. Unit 4/4 pass; Playwright e2e (7 contexts)
   passes locally and on production deploy 28168cf5. Stage → launched.
+- 2026-11-21 review: kept p5. live URL 200 with 0 console errors in headless Chromium at 390 px, Search Console 0 impressions 2026-11-01→11-21, prod D1 0 rows in every table (Cloudflare D1 API, 19:20 UTC). Under 21 days live, so no traction verdict. US Thanksgiving 26 Nov and Christmas potlucks are the window; needs one real seeded list (inbox).
+- 2026-11-22 review: kept p5. URL 200, 0 console errors (headless Chromium, 390 px, 2026-11-22 ~03:40 UTC); Search Console 0 impressions 11-01→11-22; prod D1 0 rows in every data table (Cloudflare D1 API, read-only COUNT). Under 21 days live, so no traction verdict. Thanksgiving is 26 Nov, then Christmas potlucks.
+- 2026-11-22 builder (quality): fixed a sideways scroll at 320 px (home form 365 px wide), replaced header/share emoji with line icons,
+  reworked the own-dish row on phones, neutral diet tags, "Your lists" above the form, sheet focus/Escape fixes, real 404 page, sweep of
+  expired rate-limit rows (local D1 check). e2e extended (390/320 px overflow, share fallback, Escape, 404) and passes locally and on prod
+  deploy 062b5207; unit 4/4; screenshots checked at 1280/390/320 px. WebKit could not run (missing system libs). Subagent wrote
+  `store/launch-posts.md` (PH, AlternativeTo, 3 Reddit drafts + 3 do-not-post, Show HN, friend message); inbox request added.
